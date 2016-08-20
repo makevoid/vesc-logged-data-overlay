@@ -1,3 +1,5 @@
+// TODO: golang version not ready yet
+
 package main
 
 import "github.com/veandco/go-sdl2/sdl"
