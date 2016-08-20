@@ -15,11 +15,15 @@ module SdlGuiLoop
         end
       end
 
+      gui_loop_tick renderer: renderer
+
       renderer.present
       #GC.start
       sleep 0.1
     end
   end
+
+  # SDL utils
 
   def sdl_init
     SDL2.init SDL2::INIT_EVERYTHING
@@ -38,7 +42,7 @@ module SdlGuiLoop
     SDL2::TTF.open "font.ttf", width
   end
 
-  def apply_bg renderer: renderer
+  def apply_bg(renderer:)
     renderer.fill_rect( SDL2::Rect.new 0, 0, MAIN_RECT_W, MAIN_RECT_H )
   end
 end

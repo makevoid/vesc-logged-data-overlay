@@ -11,12 +11,12 @@ sdl_init
 window   = sdl_window_test
 renderer = window.create_renderer -1, 0
 
-RPM 12345
+# RPM 12345
 
-DIM_W_LETTER = 11
+DIM_W_LETTER = 12
 DIM_H_LETTER = 26
 
-font = sdl_default_font
+FONT = sdl_default_font
 
 def draw_text(text, renderer:, font:, x:, y:)
   letters_count = text.size
@@ -33,34 +33,64 @@ def draw_text(text, renderer:, font:, x:, y:)
   )
 end
 
-
-# p font.style
-# p font.outline
-# p font.hinting
-# p font.kerning
-# p font.height
-# p font.ascent
-# p font.descent
-# p font.line_skip
-# p font.num_faces
-# p font.face_is_fixed_width?
-# p font.face_family_name
-# p font.face_style_name
-# p font.size_text("Foo")
-
 renderer.draw_color = [255, 255, 255]
-apply_bg renderer: renderer
 
 
 # --------------
 
-log = File.open "./VESC_LOG.TXT"
+
+LOG = File.open "./VESC_LOG.TXT"
+
+#
+# text = "RPM: 1234"
+#
+
+# draw data: data, gif: gif
+
+def draw(data:, renderer:)
+  d = data
+  row_h = DIM_H_LETTER * 1.3
+
+  rows =  []
+  rows << ["motor current: ", "#{d["avgMotorCurrent"]}A"]
+  rows << ["input current: ", "#{d["avgInputCurrent"]}A"]
+  rows << ["duty cycle:    ", "#{d["dutyCycleNow"]}%"]
+  rows << ["RPM:           ", "#{d["rpm"]}"]
+  rows << ["input voltage: ", "#{d["inpVoltage"]}V"]
+  rows << ["consumed:      ", "#{d["ampHours"]}Ah"]
+  rows << ["charged:       ", "#{d["ampHoursCharged"]}A"]
+  # table.rows << ["speed:", "#{d["tachometer"]}"]
+  # table.rows << ["max speed:", "#{d["tachometerAbs"]}"]
+  rows.each_with_index do |row, row_idx|
+    text = row.join(" ")
+
+    height = row_h * row_idx
+    draw_text text, renderer: renderer, font: FONT, x: 10, y: 10 + height
+  end
+end
 
 
-text = "RPM: 1234"
-text = "RPM: 12345678"
+LAST = { "data" => { "t" => 0 } }
+TIMER = Time.new
 
-draw_text text, renderer: renderer, font: font, x: 10, y: 10
+def gui_loop_tick(renderer:)
+  t = (Time.now - TIMER) * 1000.0
+
+  last_data = LAST["data"]
+
+  if t >= last_data["t"]
+    line = LOG.gets
+    return if line.nil?
+    data = JSON.parse line.strip
+
+    apply_bg renderer: renderer
+    draw data: data, renderer: renderer
+    # puts data
+    LAST["data"] = data
+  end
+end
+
+# --------------
 
 
 gui_loop renderer: renderer
