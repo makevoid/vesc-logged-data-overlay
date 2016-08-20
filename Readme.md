@@ -23,4 +23,7 @@ this is istantaneous, instead of the rmagick based logger (  https://gist.github
 
 you will get a .mp4/.mov/.mkv video (depending on the app you use to record, I found vokoscreen for linux alright) that you can embed in your video like this one:
 
+
+[![](https://img.youtube.com/vi/hgoqK2bQ5JE/0.jpg)](https://www.youtube.com/watch?v=hgoqK2bQ5JE)
+
 <iframe width="420" height="315" src="https://www.youtube.com/embed/hgoqK2bQ5JE" frameborder="0" allowfullscreen></iframe> 
