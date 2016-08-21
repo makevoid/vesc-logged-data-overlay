@@ -9,111 +9,127 @@ if ARGV.size != 1
 end
 
 class VideoWidget < Gtk::DrawingArea
+
   def initialize(file)
     super()
 
-    @playbin = Gst::ElementFactory.make('playbin')
-    # @playbin = Gst::ElementFactory.make('playbin2')
+    widget_present
+  end
 
-    @video = Gst::ElementFactory.make('xvimagesink')
+  def widget_present
+    @playbin  = Gst::ElementFactory.make 'playbin'
+    @video    = Gst::ElementFactory.make 'xvimagesink'
+    # audiosink = Gst::ElementFactory.make 'autoaudiosink' # not reqiuired for purely video file - good to be enabled by default though
+    @overlay  = Gst::ElementFactory.make 'textoverlay'
+
+    # @playbin = Gst::ElementFactory.make('playbin2')
     @video.force_aspect_ratio = true
 
-    @overlay = Gst::ElementFactory.make('textoverlay')
-    @overlay.text = 'Foo bar'
-
     bin = Gst::Bin.new
-    bin.add(@overlay)
-    # raise (@overlay.methods - Object.methods).sort.select{|m| m.to_s =~ /pad/}.inspect
-    ghost_pad = Gst::GhostPad.new('sink', @overlay.get_static_pad('video_sink'))
-    bin.add_pad(ghost_pad)
-    bin.add(@video)
-    @overlay.link(@video)
+    bin.add @overlay
+    pad         = @overlay.get_static_pad 'video_sink'
+    ghost_pad   = Gst::GhostPad.new 'sink', pad
+    bin.add_pad   ghost_pad
+    bin.add       @video
+    @overlay.link @video
 
-    #
-    # @playbin.audio_sink = @audio
-
-    # @playbin.ready
-
-
-    #
-
-    @playbin.text_sink = @overlay
-    # @playbin.video_sink = @video
+    @playbin.text_sink  = @overlay
     @playbin.video_sink = bin
-    @playbin.audio_sink = Gst::ElementFactory.make('autoaudiosink')
-    @playbin.signal_connect('notify') do
-      # @playbin.video_sink.xwindow_id = self.window.xid if self.window
-      # @playbin.video_sink.expose
-    end
+    @playbin.audio_sink = audiosink
+
     @playbin.uri = "file://#{File.absolute_path(file)}"
     @playbin.ready
-    @overlay.text = 'it works!!!'
+
+    # write test text
+    @overlay.text   = 'it works!!!'
     Thread.new do
       sleep 6
       @overlay.text = 'it works!!!!!!!!!'
     end
+    #               = # indenting like that can be useful - improves code scanning/glancing ability
   end
+
+
+
 
   def play
     @playbin.play
   end
 
-  def pause
-    @playbin.pause
-  end
-
-  def stop
-    @playbin.stop
-  end
-
   def seek(time)
-    @playbin.seek(1.0, Gst::Format::TIME,
+    pbin_seek = [
+                  1.0, Gst::Format::TIME,
                   Gst::Seek::FLAG_FLUSH | Gst::Seek::FLAG_KEY_UNIT,
                   Gst::Seek::TYPE_CUR, time * Gst::SECOND,
-                  Gst::Seek::TYPE_NONE, -1);
+                  Gst::Seek::TYPE_NONE, -1
+                ]
+    @playbin.seek *pbin_seek
   end
 end
 
+module UIElements # UIUtils
+
+  def default_button
+    button = Gtk::Button.new Gtk::Stock::MEDIA_PLAY
+    button.label = label
+  end
+
+end
 
 
-window = Gtk::Window.new
-video = VideoWidget.new(ARGV.first)
+include UIElements
 
+
+FILE_NAME = ARGV.first
+
+window    = Gtk::Window.new
+video     = VideoWidget.new  FILE_NAME
 buttonbox = Gtk::HButtonBox.new
 
-button = Gtk::Button.new(Gtk::Stock::MEDIA_PLAY)
-button.signal_connect('clicked') { video.play }
-buttonbox.add(button)
 
-button = Gtk::Button.new(Gtk::Stock::MEDIA_PAUSE)
-button.signal_connect('clicked') { video.pause }
-buttonbox.add(button)
-button = Gtk::Button.new(Gtk::Stock::MEDIA_STOP)
-button.signal_connect('clicked') { video.stop }
-buttonbox.add(button)
+# button / start-label
+label  = "Playing video with VESC data log"
+button = default_button # (self.default_button)
+buttonbox.add button
 
-button = Gtk::Button.new(Gtk::Stock::MEDIA_REWIND)
-button.signal_connect('clicked') { video.seek(-10) }
-buttonbox.add(button)
+Thread.new do
+  4.times do |i|
+    button.label = "#{label} in #{4 - i}..."
+  end
+  sleep 1
+end
 
-button = Gtk::Button.new(Gtk::Stock::MEDIA_FORWARD)
-button.signal_connect('clicked') { video.seek(10) }
-buttonbox.add(button)
 
+# draw ui
 hbox = Gtk::HBox.new
-hbox.pack_start(buttonbox, false)
+hbox.pack_start buttonbox, false
 
 vbox = Gtk::VBox.new
-vbox.pack_start(video)
-vbox.pack_start(hbox, false)
+vbox.pack_start video
+vbox.pack_start hbox, false
 
-window.add(vbox)
-window.signal_connect('destroy') do
+window.add vbox
+window.signal_connect 'destroy' do
   video.stop
   Gtk.main_quit
 end
-window.set_default_size(640, 480)
+
+
+
+# draw window
+
+WINDOW_W = 200
+WINDOW_H = 90
+
+# BOX_W
+# BOX_H
+
+window.set_default_size WINDOW_W, WINDOW_H
 window.window_position = Gtk::Window::POS_CENTER
 window.show_all
+
+
+
+# ---
 
 Gtk.main
