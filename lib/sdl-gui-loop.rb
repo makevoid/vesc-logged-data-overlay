@@ -44,5 +44,7 @@ module SdlGuiLoop
 
   def apply_bg(renderer:)
     renderer.fill_rect( SDL2::Rect.new 0, 0, MAIN_RECT_W, MAIN_RECT_H )
+
+   
   end
 end
