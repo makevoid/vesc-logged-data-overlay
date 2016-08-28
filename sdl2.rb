@@ -119,8 +119,10 @@ def gui_loop_tick(renderer:)
     # draw_graph(data: data, key: :rpm, renderer: r)
     draw_graph(data: data, key: :avgMotorCurrent, renderer: r)
     draw_graph(data: data, key: :avgInputCurrent, renderer: r, color: [100, 150, 50])
-    draw_graph(data: data, key: :dutyCycleNow, renderer: r, color: [20, 20, 250])
-    draw_bar(data: data["rpm"], key: :rpm, renderer: r)
+    draw_graph(data: data, key: :dutyCycleNow,    renderer: r, color: [20, 20, 250])
+    draw_bar(data: data["dutyCycleNow"],    key: :dutyCycleNow,    renderer: r, x_s: 50, color: [20, 20, 250])
+    draw_bar(data: data["avgInputCurrent"], key: :avgInputCurrent, renderer: r, x_s: 10, color: [100, 150, 50])
+    draw_bar(data: data["avgMotorCurrent"], key: :avgMotorCurrent, renderer: r, x_s: 30)
     @xs -= 10
     IDX[:idx] += 1
     # sleep 1
@@ -168,7 +170,6 @@ def draw_graph(data:, key:, renderer:, color: [200, 0, 0])
   max = MAX[key_max]
   max = 1 if max == 0
 
-
   PREV[key] = [20, 320]
 
   TS[key].each_with_index do |p, idx|
@@ -199,19 +200,23 @@ def draw_graph(data:, key:, renderer:, color: [200, 0, 0])
 end
 
 
-def draw_bar(data:, key:, renderer:)
+def draw_bar(data:, key:, renderer:, x_s:, color: [200, 0, 0]) # x_s (x_spacing)
   y = 0
   d = data
 
-  max_h = 300
-  MAX[key] = d if d > MAX[key]
-  max = MAX[key]
+  key = key.to_s
+  key_max = key
+  key_max = "avgCurrent" if %w(avgMotorCurrent avgInputCurrent).include? key_max
+  key_max = key_max.to_sym
+  MAX[key_max] = d if d > MAX[key_max] # redundant if drawing bar as well
+  max = MAX[key_max]
   max = 1 if max == 0
+
   y_rel = d.to_f / max
   y = - y_rel * 300 + 300
 
   # x = 20
-  x = 400
+  x = 400 + x_s
 
   y = y + 20
 
@@ -220,12 +225,7 @@ def draw_bar(data:, key:, renderer:)
   # rect = SDL2::Rect.new 20, y, 4, 4
   rect = SDL2::Rect.new x, y, 10, y_len
 
-  renderer.draw_color = [200, 0, 0]
-
-  # renderer.draw_color = [0, 255, 255]
-  # renderer.draw_rect(SDL2::Rect.new(500, 20, 40, 60))
-  # renderer.fill_rect(SDL2::Rect.new(20, 400, 60, 40))
-
+  renderer.draw_color = color
   renderer.draw_rect rect
   renderer.fill_rect rect
   renderer.draw_color = [255, 255, 255]
