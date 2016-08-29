@@ -1,5 +1,5 @@
-module SdlGuiLoop
-  MAIN_RECT_W = 640
+module SdlGuiUtils
+  MAIN_RECT_W = 800
   MAIN_RECT_H = 400
 
   def gui_loop(renderer:)
@@ -44,7 +44,5 @@ module SdlGuiLoop
 
   def apply_bg(renderer:)
     renderer.fill_rect( SDL2::Rect.new 0, 0, MAIN_RECT_W, MAIN_RECT_H )
-
-   
   end
 end
