@@ -30,10 +30,11 @@ module SdlGuiUtils
     SDL2::TTF.init
   end
 
-  def sdl_window_test(title: "Test window")
+  def sdl_window_test(title: "VESC_Logger")
     SDL2::Window.create(
       title,
-      SDL2::Window::POS_CENTERED, SDL2::Window::POS_CENTERED,
+      0, 0,
+      # SDL2::Window::POS_CENTERED, SDL2::Window::POS_CENTERED,
       MAIN_RECT_W, MAIN_RECT_H, 0
     )
   end

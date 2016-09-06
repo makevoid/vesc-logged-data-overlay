@@ -10,7 +10,7 @@ sdl_init
 
 window   = sdl_window_test
 renderer = window.create_renderer -1, 0
-
+# sleep 10
 # RPM 12345
 
 DIM_W_LETTER = 12
@@ -42,6 +42,10 @@ end
 apply_bg renderer: renderer
 renderer.draw_color = [255, 255, 255]
 
+# surf = SDL2::Surface.new MAIN_RECT_W, MAIN_RECT_H, 32
+# raise (renderer.methods - Object.methods).sort.inspect
+# raise (window.methods - Object.methods).sort.inspect
+# raise SDL2.constants.inspect
 
 # --------------
 
@@ -70,6 +74,7 @@ def draw_info(data:, renderer:)
   rows << ["input voltage: ", "#{d["inpVoltage"]} V"]
   rows << ["consumed:      ", "#{d["wattHours"]} Wh"]
   rows << ["charged:       ", "#{d["wattHoursCharged"]} W"]
+  rows << ["temperature:   ", "#{d["mosfet_temp"]}°C"]
   # rows << ["consumed:      ", "#{d["ampHours"]}Ah"]
   # rows << ["charged:       ", "#{d["ampHoursCharged"]}A"]
   # table.rows << ["tacho:", "#{d["tachometer"]}"]
@@ -86,6 +91,11 @@ def draw_info(data:, renderer:)
       color = C_GREEN
     when 3 # rpm
       color = C_BLUE
+    when 7
+      temp  = d["mosfet_temp"] / 100
+      red   = temp * 255 - 20
+      blue  = 255 - temp * 255 + 20
+      color = [red, 0, blue]
     else
       color = [20, 20, 20]
     end
@@ -112,6 +122,7 @@ def gui_loop_tick(renderer:)
   if t >= last_data["t"]
     line = LOG.gets
     sleep_and_exit(renderer: r) if line.nil? || (LIMIT != 0  && IDX[:idx] > LIMIT)
+    return unless line
     begin
       data = JSON.parse line.strip
     rescue JSON::ParserError
@@ -148,7 +159,7 @@ def gui_loop_tick(renderer:)
     draw_bar(data: data["avgMotorCurrent"], key: :avgMotorCurrent, renderer: r, x_s: x_bar_space+20)
     @xs -= 10
     IDX[:idx] += 1
-    sleep 0.2
+    # sleep 0.2
   end
 end
 
@@ -290,11 +301,23 @@ def sleep_and_exit(renderer:)
   #   "ampHoursCharged" => 0,
   # }
   # draw data: data, renderer: renderer
-  exit
+  exit unless in_irb?
+end
+
+def in_irb?
+  $0 == "irb"
 end
 
 # --------------
 
-
+# Thread.new do # for irb debugging
 gui_loop renderer: renderer
+# end
+
+
 # save_to_video
+
+def save_to_video
+  "x11grab"
+  "ffmpeg -f avfoundation -r 25  -s 1600x800 -i 1:0 -vf crop=1600:800:0:90  -c:v libx264   ~/Pictures/out.mp4"
+end
